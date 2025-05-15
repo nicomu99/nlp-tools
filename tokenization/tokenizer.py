@@ -9,7 +9,7 @@ class Tokenizer:
 
         self.vocab_size = vocab_size
         self.max_length = max_length
-        self.special_tokens = [self.pad_token, self.unknown_token] + special_tokens
+        self.special_tokens = [self.unknown_token, self.pad_token] + special_tokens
         self.vocab = {}
 
         for idx, token in enumerate(self.special_tokens):
