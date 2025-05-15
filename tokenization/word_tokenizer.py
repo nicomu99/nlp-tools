@@ -36,5 +36,5 @@ class WordTokenizer(Tokenizer):
 
         return tokens[:self.max_length]
 
-    def get_pad_token(self):
+    def get_pad_token(self) -> int:
         return self.vocab[self.pad_token]
