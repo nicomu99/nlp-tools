@@ -52,7 +52,6 @@ class BiLSTM(nn.Module):
         )
 
     def forward(self, seqs, lengths):
-        # Embeddings and dropout
         hidden = self.embedding(seqs)
         hidden = self.dropout_layer(hidden)
 
@@ -61,18 +60,17 @@ class BiLSTM(nn.Module):
         # We keep the batch dimension as first dimension with batch_first
         # The inputs are already sorted by length, so enforce sorted is not needed
         hidden = pack_padded_sequence(hidden, lengths.cpu(), batch_first=True)
-        hidden, (_, _) = self.bilstm(hidden, batch_first=True)
+        hidden, (_, _) = self.bilstm(hidden)
 
         # Inverse operation to unpack the sequences and pad them again
         # Second return is the lengths again
         # Keep batches as first dimension
-        hidden, _ = pad_packed_sequence(hidden, batch_first=True, padding_value=1)
+        hidden, _ = pad_packed_sequence(hidden, batch_first=True)
 
         # BiLSTM returns hidden representation for each index -> since we are only doing classification
         # we can pool into a single dimension
         hidden = torch.mean(hidden, dim=1)
 
-        # Linear layer with ReLU and dropout in between
         hidden = self.linear1(hidden)
         hidden = self.dropout_layer(hidden)
         hidden = F.relu(hidden)
