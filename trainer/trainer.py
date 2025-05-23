@@ -40,10 +40,10 @@ class Trainer:
             raise RuntimeError("Tokenizer is missing.")
 
         if criterion is None:
-            criterion = optim.Adam(model.parameters(), lr=learning_rate)
+            raise RuntimeError("Criterion is missing.")
 
         if optimizer is None:
-            raise RuntimeError("Optimizer is missing.")
+            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = model.to(self.device)
@@ -161,7 +161,7 @@ class Trainer:
         early_stop_epoch = 0
         best_f1 = 0
         for epoch in range(self.num_epochs):
-            train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_dataloader, self.optimizer)
+            train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_datWaloader, self.optimizer)
             val_loss, val_acc, val_f1 = self.process_one_epoch(self.eval_dataloader)
 
             self._save_epoch_metrics(epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1)
