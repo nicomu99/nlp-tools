@@ -1,6 +1,7 @@
 from typing import List, Tuple
 
 import torch
+import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 
 def c_pad_sequence(sequence: list[int], pad_token: int, max_length: int) -> list[int]:
@@ -24,3 +25,13 @@ def collate_batch(batch: List[Tuple[torch.Tensor, torch.Tensor]]) -> Tuple[torch
     lengths = torch.tensor([len(seq) for seq in input_ids])
 
     return padded_input_ids, labels, lengths
+
+def f1_score(predictions, labels):
+    true_positives = ((predictions == 1) == labels)
+    total_positive_preds = np.sum((predictions == 1))
+    precision = true_positives / total_positive_preds
+
+    total_positives = np.sum(labels == 1)
+    recall = true_positives / total_positives
+
+    return 2 * (precision * recall) / (precision + recall)
