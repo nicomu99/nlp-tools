@@ -20,13 +20,12 @@ class Trainer:
     def __init__(self,
                  model: nn.Module,
                  tokenizer: Tokenizer,
-                 train_dataset: HFDataset,
                  criterion:  nn.Module,
-                 optimizer: torch.optim.Optimizer = None,
+                 train_dataset: HFDataset,
                  eval_dataset: HFDataset = None,
                  test_dataset: HFDataset = None,
+                 optimizer: torch.optim.Optimizer = None,
                  num_epochs: int = 3,
-                 max_seq_length: int = 256,
                  batch_size: int = 32,
                  data_loaders: int = 2,
                  learning_rate: float = 1e-6,
@@ -52,7 +51,6 @@ class Trainer:
         self.tokenizer = tokenizer
         self.criterion = criterion
         self.optimizer = optimizer
-        self.max_seq_length = max_seq_length
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.data_loaders = data_loaders
@@ -175,7 +173,7 @@ class Trainer:
                 torch.save(best_model_state, f"{self.run_name}/model/best_model.pt")
 
             # Early stopping if 3 consecutive epochs are below the highest F1 score
-            if val_f1 > best_f1:
+            if val_f1 > best_f1 and self.early_stop:
                 best_f1 = val_f1
                 early_stop_epoch = 0
             else:
