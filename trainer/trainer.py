@@ -1,3 +1,5 @@
+import os
+import csv
 from typing import Optional
 
 from tqdm import tqdm
@@ -55,6 +57,9 @@ class Trainer:
         self.batch_size = batch_size
         self.data_loaders = data_loaders
         self.run_name = run_name
+        self.metric_dir = f'{self.run_name}/metrics'
+        self.model_dir = f'{self.run_name}/model'
+        self.metric_file = f'{self.metric_dir}/metrics.csv'
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
 
@@ -151,22 +156,23 @@ class Trainer:
 
         return avg_epoch_loss, accuracy, f1
 
-
     def train(self):
+        # Create empty file for metric saving
+        self._create_new_metric_saving_file()
 
         early_stop_epoch = 0
         best_f1 = 0
         for epoch in range(self.num_epochs):
             train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_dataloader, self.optimizer)
-
             val_loss, val_acc, val_f1 = self.process_one_epoch(self.eval_dataloader)
 
-            # if reg_f1_score > best_f1_score:
-            #     # Save best model performance
-            #     best_f1_score = reg_f1_score
-            #     best_config = index
-            #     best_model_state = model.state_dict().copy()
-            #     torch.save(best_model_state, f"{path}best_model.pt")
+            self._save_epoch_metrics(epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1)
+
+            if val_f1 > best_f1:
+                # Save best model performance
+                best_f1 = val_f1
+                best_model_state = self.model.state_dict().copy()
+                torch.save(best_model_state, f"{self.run_name}/model/best_model.pt")
 
             # Early stopping if 3 consecutive epochs are below the highest F1 score
             if val_f1 > best_f1:
@@ -179,4 +185,26 @@ class Trainer:
                 print(f"Training stopped early after epoch {epoch}")
                 break
 
+    def _create_new_metric_saving_file(self):
+        # Create folder for metric and model saving
+        if not os.path.exists(self.run_name):
+            os.makedirs(self.run_name)
+
+        if not os.path.exists(self.metric_dir):
+            os.makedirs(self.metric_dir)
+
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
+
+        # Initialize empty metric saving file with
+        headers = ['epoch', 'train_loss', 'train_accuracy', 'train_f1', 'val_loss', 'val_accuracy', 'val_f1']
+        with open(self.metric_file, mode='w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(headers)
+
+    def _save_epoch_metrics(self, epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1):
+        metric_row = [epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1]
+        with open(self.metric_dir, mode='a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(metric_row)
 
