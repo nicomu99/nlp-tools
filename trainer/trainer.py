@@ -28,6 +28,9 @@ class Trainer:
                  batch_size: int = 32,
                  data_loaders: int = 2,
                  learning_rate: float = 1e-6,
+                 run_name: str = '',
+                 early_stop: bool = False,
+                 early_stop_limit: int = 3
                  ):
         if train_dataset is None:
             raise RuntimeError("Train dataset is missing.")
@@ -51,6 +54,9 @@ class Trainer:
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.data_loaders = data_loaders
+        self.run_name = run_name
+        self.early_stop = early_stop
+        self.early_stop_limit = early_stop_limit
 
         self.train_dataset = self._prepare_dataset(train_dataset)
         self.train_dataloader = self._prepare_loader(self.train_dataset, add_batching=True)
@@ -147,29 +153,30 @@ class Trainer:
 
 
     def train(self):
+
+        early_stop_epoch = 0
+        best_f1 = 0
         for epoch in range(self.num_epochs):
-            train_loss, train_acc = self.process_one_epoch(self.train_dataloader, self.optimizer)
+            train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_dataloader, self.optimizer)
 
-            val_loss, val_acc = self.process_one_epoch(self.eval_dataloader)
+            val_loss, val_acc, val_f1 = self.process_one_epoch(self.eval_dataloader)
 
-
-            # Calculate regualrized f1 score given the predefined function
-            reg_f1_score = regularized_f1(train_f1, val_f1)
-            if reg_f1_score > best_f1_score:
-                # Save best model performance
-                best_f1_score = reg_f1_score
-                best_config = index
-                best_model_state = model.state_dict().copy()
-                torch.save(best_model_state, f"{path}best_model.pt")
+            # if reg_f1_score > best_f1_score:
+            #     # Save best model performance
+            #     best_f1_score = reg_f1_score
+            #     best_config = index
+            #     best_model_state = model.state_dict().copy()
+            #     torch.save(best_model_state, f"{path}best_model.pt")
 
             # Early stopping if 3 consecutive epochs are below the highest F1 score
-            if val_f1 > best_config_f1:
-                best_config_f1 = val_f1
-                early_stop = 0
+            if val_f1 > best_f1:
+                best_f1 = val_f1
+                early_stop_epoch = 0
             else:
-                early_stop += 1
-            if early_stop >= 3:
-                print(f"Configuration {index} stopped at epoch {epoch}.")
+                early_stop_epoch += 1
+
+            if early_stop_epoch >= self.early_stop_limit:
+                print(f"Training stopped early after epoch {epoch}")
                 break
 
 
