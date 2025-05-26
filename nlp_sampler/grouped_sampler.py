@@ -28,8 +28,7 @@ class GroupedSampler(Sampler):
             sorted_batch_list.extend([index for index, _ in next_batch])
 
         # Return a list of tuples sorted by ascending sequence length
-        for i in range(0, len(sorted_batch_list), self.batch_size):
-            yield sorted_batch_list[i:i + self.batch_size]
+        return iter(sorted_batch_list)
 
 
     def __len__(self):
