@@ -55,8 +55,8 @@ class Trainer:
         self.batch_size = batch_size
         self.data_loaders = data_loaders
         self.run_name = run_name
-        self.metric_dir = f'{self.run_name}/metrics'
-        self.model_dir = f'{self.run_name}/model'
+        self.metric_dir = f'out/{self.run_name}/metrics'
+        self.model_dir = f'out/{self.run_name}/model'
         self.metric_file = f'{self.metric_dir}/metrics.csv'
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
@@ -161,7 +161,7 @@ class Trainer:
         early_stop_epoch = 0
         best_f1 = 0
         for epoch in range(self.num_epochs):
-            train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_datWaloader, self.optimizer)
+            train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_dataloader, self.optimizer)
             val_loss, val_acc, val_f1 = self.process_one_epoch(self.eval_dataloader)
 
             self._save_epoch_metrics(epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1)
