@@ -58,8 +58,7 @@ class BiLSTM(nn.Module):
         # For computational efficiency pack the padded sequences
         # From doc: lengths must be on cpu if provided as a tensor -> lengths.cpu()
         # We keep the batch dimension as first dimension with batch_first
-        # The inputs are already sorted by length, so enforce sorted is not needed
-        hidden = pack_padded_sequence(hidden, lengths.cpu(), batch_first=True)
+        hidden = pack_padded_sequence(hidden, lengths.cpu(), batch_first=True, enforce_sorted=False)
         hidden, (_, _) = self.bilstm(hidden)
 
         # Inverse operation to unpack the sequences and pad them again
@@ -72,7 +71,7 @@ class BiLSTM(nn.Module):
         hidden = torch.mean(hidden, dim=1)
 
         hidden = self.linear1(hidden)
-        hidden = self.dropout_layer(hidden)
+        # hidden = self.dropout_layer(hidden)
         hidden = F.relu(hidden)
 
         # Single output, since we do binary classification
