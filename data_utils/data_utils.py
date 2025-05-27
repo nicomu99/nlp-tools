@@ -13,25 +13,26 @@ def c_pad_sequence(sequence: list[int], pad_token: int, max_length: int) -> list
 def c_pad_sequences(sequences: list[list[int]], pad_token: int, max_length: int) -> list[list[int]]:
     return [c_pad_sequence(sequence, pad_token, max_length) for sequence in sequences]
 
-def collate_batch(batch: List[Tuple[torch.Tensor, torch.Tensor]]) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
-
-    # Pad input_ids
-    input_ids, labels = zip(*batch)
-
-    pad_token_id = 1
-    padded_input_ids = pad_sequence(input_ids, batch_first=True, padding_value=pad_token_id)
-
-    # Lengths of individual sequences
-    lengths = torch.tensor([len(seq) for seq in input_ids])
-
-    return padded_input_ids, labels, lengths
+def collate_batch(batch: List[Tuple[List[int], int]]) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
+    # return 3 batched tensors: sequences, labels, lengths
+    ids = [torch.tensor(index, dtype=torch.long) for (index, _) in batch]
+    # TUrn labels into tensors
+    labels = torch.tensor([label for (_, label) in batch], dtype=torch.long)
+    # Create a tensor which stores the length of all tokenized sentences before padding
+    lengths = torch.tensor([len(seq) for seq in ids], dtype=torch.long)
+    # Pad the indices to the same length
+    padded_indices = pad_sequence(ids, batch_first=True, padding_value=1)
+    return padded_indices, labels, lengths
 
 def f1_score(predictions, labels):
-    true_positives = ((predictions == 1) == labels)
-    total_positive_preds = np.sum((predictions == 1))
-    precision = true_positives / total_positive_preds
+    true_positives = np.sum((predictions == 1) & (labels == 1))
+    predicted_positives = np.sum(predictions == 1)
+    actual_positives = np.sum(labels == 1)
 
-    total_positives = np.sum(labels == 1)
-    recall = true_positives / total_positives
+    precision = true_positives / predicted_positives if predicted_positives != 0 else 0
+    recall = true_positives / actual_positives if actual_positives != 0 else 0
+
+    if precision + recall == 0:
+        return 0
 
     return 2 * (precision * recall) / (precision + recall)
