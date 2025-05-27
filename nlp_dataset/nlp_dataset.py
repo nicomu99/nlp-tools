@@ -11,8 +11,8 @@ class NLPDataset(Dataset):
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, index: int) -> Tuple[torch.tensor, torch.tensor]:
-        return torch.tensor(self.input_ids[index]), torch.tensor(self.labels[index])
+    def __getitem__(self, index: int) -> Tuple[List[int], int]:
+        return self.input_ids[index], self.labels[index]
 
     def get_input_ids(self) -> List[List[int]]:
         return self.input_ids
