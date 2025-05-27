@@ -1,3 +1,5 @@
+import re
+
 from tokenization.tokenizer import Tokenizer
 from collections import Counter
 
@@ -13,9 +15,8 @@ class WordTokenizer(Tokenizer):
     def _build_vocab(self, dataset: list[str]):
         value_counts = Counter()
         for sequence in dataset:
-            text = sequence.lower().split()
-
-            value_counts.update(text)
+            tokens = re.findall(r"\w+(?:'\w+)?|[^\w\s]", sequence.lower())
+            value_counts.update(tokens)
 
         for word, _ in value_counts.most_common(self.vocab_size - len(self.vocab)):
             self.vocab[word] = len(self.vocab)
@@ -31,7 +32,7 @@ class WordTokenizer(Tokenizer):
 
     def tokenize(self, text: str) -> list[int]:
         tokens = []
-        for word in text.lower().split():
+        for word in re.findall(r"\w+(?:'\w+)?|[^\w\s]", text.lower()):
             tokens.append(self.vocab.get(word, self.vocab[self.unknown_token]))
 
         return tokens[:self.max_length]
