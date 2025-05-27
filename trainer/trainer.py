@@ -145,12 +145,13 @@ class Trainer:
                     optimizer.step()
 
             pred_labels = (preds >= 0.5).int()
+            # print(preds)
             correct_predictions += (pred_labels == labels).sum().item()
             total_predictions += labels.size(0)
             total_loss += loss.item() * labels.size(0)
 
-            processed_labels.extend(labels.cpu().numpy())
-            processed_predictions.extend(pred_labels.cpu().numpy())
+            processed_labels.extend(labels.cpu().tolist())
+            processed_predictions.extend(pred_labels.cpu().tolist())
 
         avg_epoch_loss = total_loss / total_predictions
         accuracy = correct_predictions / total_predictions
@@ -176,7 +177,7 @@ class Trainer:
                 # Save best model performance
                 best_f1 = val_f1
                 best_model_state = self.model.state_dict().copy()
-                torch.save(best_model_state, f"{self.run_name}/model/best_model.pt")
+                torch.save(best_model_state, f"{self.model_dir}/best_model.pt")
 
             # Early stopping if 3 consecutive epochs are below the highest F1 score
             if val_f1 > best_f1:
