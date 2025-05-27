@@ -14,17 +14,16 @@ def c_pad_sequences(sequences: list[list[int]], pad_token: int, max_length: int)
     return [c_pad_sequence(sequence, pad_token, max_length) for sequence in sequences]
 
 def collate_batch(batch: List[Tuple[List[int], int]]) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
-    # return 3 batched tensors: sequences, labels, lengths
     ids = [torch.tensor(index, dtype=torch.long) for (index, _) in batch]
-    # TUrn labels into tensors
     labels = torch.tensor([label for (_, label) in batch], dtype=torch.long)
-    # Create a tensor which stores the length of all tokenized sentences before padding
     lengths = torch.tensor([len(seq) for seq in ids], dtype=torch.long)
-    # Pad the indices to the same length
     padded_indices = pad_sequence(ids, batch_first=True, padding_value=1)
     return padded_indices, labels, lengths
 
 def f1_score(predictions, labels):
+    predictions = np.array(predictions)
+    labels = np.array(labels)
+
     true_positives = np.sum((predictions == 1) & (labels == 1))
     predicted_positives = np.sum(predictions == 1)
     actual_positives = np.sum(labels == 1)
