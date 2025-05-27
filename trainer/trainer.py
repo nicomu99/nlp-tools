@@ -28,7 +28,7 @@ class Trainer:
                  num_epochs: int = 3,
                  batch_size: int = 32,
                  data_loaders: int = 2,
-                 learning_rate: float = 1e-6,
+                 learning_rate: float = 1e-4,
                  run_name: str = '',
                  early_stop: bool = False,
                  early_stop_limit: int = 3
@@ -126,27 +126,31 @@ class Trainer:
         processed_labels = []
         processed_predictions = []
 
-        context = torch.enable_grad() if train else torch.no_grad()
+        # context = torch.enable_grad() if train else torch.no_grad()
 
-        with context:
-            for input_ids, labels, lengths in tqdm(loader, desc="Training" if train else "Validation"):
-                input_ids   = input_ids.to(self.device)
-                labels      = labels.float().to(self.device)
-                lengths     = lengths.to(self.device)
+        # with context:
+        for input_ids, labels, lengths in tqdm(loader, desc="Training" if train else "Validation"):
+            input_ids   = input_ids.to(self.device)
+            labels      = labels.to(self.device)
+
+            if train:
+                optimizer.zero_grad()
+
+            with torch.set_grad_enabled(train):
+                preds = self.model(input_ids, lengths)
+                loss = self.criterion(preds, labels.float())
 
                 if train:
-                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
 
-                preds = self.model(input_ids, lengths)
-                loss = self.criterion(preds, labels)
+            pred_labels = (preds >= 0.5).int()
+            correct_predictions += (pred_labels == labels).sum().item()
+            total_predictions += labels.size(0)
+            total_loss += loss.item() * labels.size(0)
 
-                pred_labels = (preds >= 0.5).int()
-                correct_predictions += (pred_labels == labels).sum().item()
-                total_predictions += labels.size(0)
-                total_loss += loss.item() * labels.size(0)
-
-                processed_labels.extend(labels.cpu().numpy())
-                processed_predictions.extend(preds.cpu().numpy())
+            processed_labels.extend(labels.cpu().numpy())
+            processed_predictions.extend(pred_labels.cpu().numpy())
 
         avg_epoch_loss = total_loss / total_predictions
         accuracy = correct_predictions / total_predictions
@@ -162,7 +166,9 @@ class Trainer:
         best_f1 = 0
         for epoch in range(self.num_epochs):
             train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_dataloader, self.optimizer)
-            val_loss, val_acc, val_f1 = self.process_one_epoch(self.eval_dataloader)
+
+            with torch.no_grad():
+                val_loss, val_acc, val_f1 = self.process_one_epoch(self.eval_dataloader)
 
             self._save_epoch_metrics(epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1)
 
@@ -173,21 +179,17 @@ class Trainer:
                 torch.save(best_model_state, f"{self.run_name}/model/best_model.pt")
 
             # Early stopping if 3 consecutive epochs are below the highest F1 score
-            if val_f1 > best_f1 and self.early_stop:
+            if val_f1 > best_f1:
                 best_f1 = val_f1
                 early_stop_epoch = 0
             else:
                 early_stop_epoch += 1
 
-            if early_stop_epoch >= self.early_stop_limit:
+            if early_stop_epoch >= self.early_stop_limit and self.early_stop:
                 print(f"Training stopped early after epoch {epoch}")
                 break
 
     def _create_new_metric_saving_file(self):
-        # Create folder for metric and model saving
-        if not os.path.exists(self.run_name):
-            os.makedirs(self.run_name)
-
         if not os.path.exists(self.metric_dir):
             os.makedirs(self.metric_dir)
 
@@ -202,7 +204,7 @@ class Trainer:
 
     def _save_epoch_metrics(self, epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1):
         metric_row = [epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1]
-        with open(self.metric_dir, mode='a', newline='') as csvfile:
+        with open(self.metric_file, mode='a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(metric_row)
 
