@@ -58,8 +58,11 @@ class Trainer:
         self.metric_dir = f'out/{self.run_name}/metrics'
         self.model_dir = f'out/{self.run_name}/model'
         self.metric_file = f'{self.metric_dir}/metrics.csv'
+        self.memory_dir = f'out/{self.run_name}/memory'
+        self.memory_file = f'{self.memory_dir}/memory.csv'
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
+        self.curr_step = 0      # Tracks how many steps have been trained
 
         self.train_dataset = self._prepare_dataset(train_dataset)
         self.train_dataloader = self._prepare_loader(self.train_dataset, add_batching=True)
@@ -108,7 +111,7 @@ class Trainer:
     def process_one_epoch(self,
                           loader: torch.utils.data.DataLoader,
                           optimizer: Optional[torch.optim.Optimizer] = None
-                          ) -> Tuple[float, float, float]:
+                          ) -> Tuple[float, float, float, dict]:
         """
         Processes one training or validation step for a given model.
         :param loader: The data loader providing batches of input sequences and labels.
@@ -127,9 +130,16 @@ class Trainer:
         processed_predictions = []
 
         # context = torch.enable_grad() if train else torch.no_grad()
-
         # with context:
+
+        allocated_mem       = []
+        max_allocated_mem   = []
+        reserved_mem        = []
+        max_reserved_mem    = []
+        steps                = []
         for input_ids, labels, lengths in tqdm(loader, desc="Training" if train else "Validation"):
+            torch.cuda.reset_peak_memory_stats()
+
             input_ids   = input_ids.to(self.device)
             labels      = labels.to(self.device)
 
@@ -153,11 +163,26 @@ class Trainer:
             processed_labels.extend(labels.cpu().tolist())
             processed_predictions.extend(pred_labels.cpu().tolist())
 
+            allocated_mem.append(torch.cuda.memory_allocated)
+            max_allocated_mem.append(torch.cuda.max_memory_allocated())
+            reserved_mem.append(torch.cuda.memory_reserved())
+            max_reserved_mem.append(torch.cuda.max_memory_reserved())
+            steps.append(self.curr_step)
+            self.curr_step += 1
+
         avg_epoch_loss = total_loss / total_predictions
         accuracy = correct_predictions / total_predictions
         f1 = f1_score(processed_predictions, processed_labels)
 
-        return avg_epoch_loss, accuracy, f1
+        memory_stats = {
+            'steps': steps,
+            'alloc_mem': allocated_mem,
+            'max_alloc_mem': max_allocated_mem,
+            'reserved_mem': reserved_mem,
+            'max_reserved_mem': max_reserved_mem
+        }
+
+        return avg_epoch_loss, accuracy, f1, memory_stats
 
     def train(self):
         # Create empty file for metric saving
@@ -166,12 +191,13 @@ class Trainer:
         early_stop_epoch = 0
         best_f1 = 0
         for epoch in range(self.num_epochs):
-            train_loss, train_acc, train_f1 = self.process_one_epoch(self.train_dataloader, self.optimizer)
+            train_loss, train_acc, train_f1, train_mem = self.process_one_epoch(self.train_dataloader, self.optimizer)
 
             with torch.no_grad():
-                val_loss, val_acc, val_f1 = self.process_one_epoch(self.eval_dataloader)
+                val_loss, val_acc, val_f1, val_mem = self.process_one_epoch(self.eval_dataloader)
 
             self._save_epoch_metrics(epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1)
+            self._save_memory_stats(train_mem, val_mem)
 
             if val_f1 > best_f1:
                 # Save best model performance
@@ -197,11 +223,20 @@ class Trainer:
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
 
+        if not os.path.exists(self.memory_dir):
+            os.makedirs(self.memory_dir)
+
         # Initialize empty metric saving file with
         headers = ['epoch', 'train_loss', 'train_accuracy', 'train_f1', 'val_loss', 'val_accuracy', 'val_f1']
         with open(self.metric_file, mode='w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(headers)
+
+        mem_headers = ['steps', 'train_alloc', 'train_max_alloc', 'train_res', 'train_max_res',
+                       'val_alloc', 'val_max_alloc', 'val_res', 'val_max_res']
+        with open(self.memory_file, mode='w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(mem_headers)
 
     def _save_epoch_metrics(self, epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1):
         metric_row = [epoch, train_loss, train_acc, train_f1, val_loss, val_acc, val_f1]
@@ -209,3 +244,19 @@ class Trainer:
             writer = csv.writer(csvfile)
             writer.writerow(metric_row)
 
+    def _save_memory_stats(self, train_mem_stats, val_mem_stats):
+        for i in enumerate(train_mem_stats['steps']):
+            row = [train_mem_stats['steps'][i],
+                   train_mem_stats['alloc_mem'][i],
+                   train_mem_stats['max_alloc_mem'][i],
+                   train_mem_stats['reserved_mem'][i],
+                   train_mem_stats['max_reserved_mem'][i],
+                   val_mem_stats['alloc_mem'][i],
+                   val_mem_stats['max_alloc_mem'][i],
+                   val_mem_stats['reserved_mem'][i],
+                   val_mem_stats['max_reserved_mem'][i]
+                   ]
+
+            with open(self.memory_file, mode='a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(row)
