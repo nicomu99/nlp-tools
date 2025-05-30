@@ -163,7 +163,7 @@ class Trainer:
             processed_labels.extend(labels.cpu().tolist())
             processed_predictions.extend(pred_labels.cpu().tolist())
 
-            allocated_mem.append(torch.cuda.memory_allocated)
+            allocated_mem.append(torch.cuda.memory_allocated())
             max_allocated_mem.append(torch.cuda.max_memory_allocated())
             reserved_mem.append(torch.cuda.memory_reserved())
             max_reserved_mem.append(torch.cuda.max_memory_reserved())
@@ -245,7 +245,7 @@ class Trainer:
             writer.writerow(metric_row)
 
     def _save_memory_stats(self, train_mem_stats, val_mem_stats):
-        for i in enumerate(train_mem_stats['steps']):
+        for i in range(len(train_mem_stats['steps'])):
             row = [train_mem_stats['steps'][i],
                    train_mem_stats['alloc_mem'][i],
                    train_mem_stats['max_alloc_mem'][i],
