@@ -5,7 +5,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from model.embedding import Embedding
 from model.dropout import Dropout
 from model.linear import Linear
-from lstm import LSTM
+from model.lstm import LSTM
 
 class CBiLSTM(nn.Module):
     def __init__(self,
@@ -49,11 +49,7 @@ class CBiLSTM(nn.Module):
         hidden = self.dropout_layer(hidden)
 
         # For computational efficiency pack the padded sequences
-        hidden = pack_padded_sequence(hidden, lengths.cpu(), batch_first=True, enforce_sorted=False)
         hidden = self.bilstm(hidden)
-
-        # Inverse operation to unpack the sequences and pad them again
-        hidden, _ = pad_packed_sequence(hidden, batch_first=True)
 
         # BiLSTM returns hidden representation for each index -> since we are only doing classification
         # we can pool into a single dimension
