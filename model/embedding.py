@@ -3,8 +3,8 @@ import torch.nn as nn
 
 class Embedding(nn.Module):
     """
-    A simple embedding layer, which is just a lookup table of embeddings. The embeddings
-    are updated during training.
+    A simple embedding layer, which acts as a lookup table for token embeddings. The embeddings are simply
+    tensors, which are updated during training.
     """
 
     def __init__(self, num_embeddings: int, embedding_dim: int, padding_idx: int):
@@ -31,7 +31,8 @@ class Embedding(nn.Module):
         """
         Returns the embeddings for the tensor input_ids.
 
-        :param input_ids: A tensor of size (batch_size, seq_len) for which the embeddings should be returned.
+        :param input_ids: A tensor of input tokens of size (batch_size, seq_len).
+
         :return: A tensor of size (batch_size, seq_len, embedding_dim), holding the embeddings for each token.
         Any padded token gets zeroed.
         """

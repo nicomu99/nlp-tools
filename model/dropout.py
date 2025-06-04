@@ -27,6 +27,7 @@ class Dropout(nn.Module):
         Returns the input ids with applied dropout. Only gets applied during training.
 
         :param input_ids: Tensor of size (batch_size, seq_len, hidden_dim) on which dropout is applied.
+
         :return: Either the input_ids, if training mode is off, or the masked input_ids with normalization.
         """
         # self.training is automatically updated when using model.train() or .eval()

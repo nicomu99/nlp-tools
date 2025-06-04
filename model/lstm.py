@@ -3,7 +3,21 @@ import torch.nn as nn
 from lstm_cell import LSTMCell
 
 class LSTM(nn.Module):
+    """
+    A full LSTM with an optional bidirectional setting. Computes the full hidden representation across a full sequence
+    of tokens.
+    """
+
     def __init__(self, input_size: int, hidden_size: int, num_layers: int = 1, bidirectional: bool = True):
+        """
+        Initializes the LSTM.
+
+        :param input_size: The expected size of the input tensors.
+        :param hidden_size: The hidden dimension size.
+        :param num_layers: Number of layers in the LSTM to allow stacking the LSTM.
+        :param bidirectional: Controls whether the LSTM should be bidirectional. If True, the input sequences are
+        processed both from left-to-right and right-to-left. If False, only from left-to-right.
+        """
         super().__init__()
 
         self.input_size = input_size
@@ -23,6 +37,17 @@ class LSTM(nn.Module):
             ])
 
     def forward(self, x: torch.Tensor):
+        """
+        Computes the hidden representation across the whole input sequence.
+
+        :param x: The features of the input sequence of size (batch_size, seq_len, input_dim) or (seq_len, input_dim).
+        :return output: The hidden representation of the sequences after being processed of size
+        (batch_size, seq_len, input_dim)
+        """
+        # Add another dimension, if the input is not batched.
+        if x.dim() == 2:
+            x = x.unsqueeze(0)
+
         batch_size, seq_len, _ = x.shape
 
         output = x
