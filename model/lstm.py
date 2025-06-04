@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from lstm_cell import LSTMCell
+from model.lstm_cell import LSTMCell
 
 class LSTM(nn.Module):
     """
@@ -45,6 +45,7 @@ class LSTM(nn.Module):
         (batch_size, seq_len, input_dim)
         """
         # Add another dimension, if the input is not batched.
+        type(x)
         if x.dim() == 2:
             x = x.unsqueeze(0)
 
