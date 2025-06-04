@@ -17,7 +17,7 @@ class Dropout(nn.Module):
         """
         super().__init__()
 
-        if p > 0 or p < 1:
+        if p < 0 or p > 1:
             raise RuntimeError(f'Dropout must be between 0 and 1')
 
         self.p = p
