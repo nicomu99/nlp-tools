@@ -57,11 +57,9 @@ class Trainer:
 
         self.run_name = run_name
         self.logger = ClassificationLogger(self.run_name)
-        self.current_epoch = 0
 
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
-        self.curr_step = 0      # Tracks how many steps have been trained
 
         self.train_dataset = self._prepare_dataset(train_dataset)
         self.train_dataloader = self._prepare_loader(self.train_dataset, add_batching=True)
@@ -121,10 +119,7 @@ class Trainer:
         train = optimizer is not None
         self.model.train() if train else self.model.eval()
 
-        # context = torch.enable_grad() if train else torch.no_grad()
-        # with context:
-
-        self.logger.init_epoch(self.current_epoch)
+        self.logger.init_epoch()
         for input_ids, labels, lengths in tqdm(loader, desc="Training" if train else "Validation"):
             torch.cuda.reset_peak_memory_stats()
 
@@ -153,13 +148,13 @@ class Trainer:
         # early_stop_epoch = 0
         # best_f1 = 0
         for epoch in range(self.num_epochs):
-            self.current_epoch = epoch
+
             self.process_one_epoch(self.train_dataloader, self.optimizer, stage='train')
 
             with torch.no_grad():
                 self.process_one_epoch(self.eval_dataloader, stage='eval')
 
-
+            self.logger.update_epoch()
             # val_f1 = val_metrics['f1']
             # if val_f1 > best_f1:
             #     # Save best model performance

@@ -22,14 +22,16 @@ class Logger:
         self.eval_memory_file = f'{self.memory_dir}/eval_memory.csv'
 
         # Memory stats to save
-        self.epoch = -1
+        self.epoch = 0
         self.allocated_mem       = []
         self.max_allocated_mem   = []
         self.reserved_mem        = []
         self.max_reserved_mem    = []
 
-    def init_epoch(self, epoch: int):
-        self.epoch = epoch
+    def update_epoch(self):
+        self.epoch += 1
+
+    def init_epoch(self):
         self.allocated_mem       = []
         self.max_allocated_mem   = []
         self.reserved_mem        = []
