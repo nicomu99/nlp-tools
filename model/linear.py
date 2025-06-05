@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 
@@ -16,14 +18,15 @@ class Linear(nn.Module):
         """
         super().__init__()
 
+        std = 1.0 / math.sqrt(in_features) if in_features != 0 else 0
         self.weights = nn.Parameter(
-            torch.randn(out_features, in_features)
+            torch.empty(out_features, in_features).uniform_(-std, std)
         )
 
         self.apply_bias = bias
         if self.apply_bias:
             self.bias = nn.Parameter(
-                torch.randn(out_features)
+                torch.empty(out_features).uniform_(-std, std)
             )
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
@@ -36,6 +39,6 @@ class Linear(nn.Module):
         out = input_ids @ self.weights.T
 
         if self.apply_bias:
-            out += out + self.bias
+            out = out + self.bias
         return out
 

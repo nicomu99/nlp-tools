@@ -26,6 +26,12 @@ class Embedding(nn.Module):
             )
         )
 
+        def zero_padding_grad(grad):
+            grad[self.padding_idx] = 0
+            return grad
+
+        self.embedding_matrix.register_hook(zero_padding_grad)
+
 
     def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
         """

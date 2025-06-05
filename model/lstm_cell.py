@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 
@@ -18,20 +20,23 @@ class LSTMCell(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
 
-        self.W_f = nn.Parameter(torch.randn(hidden_dim, input_dim))
-        self.W_i = nn.Parameter(torch.randn(hidden_dim, input_dim))
-        self.W_o = nn.Parameter(torch.randn(hidden_dim, input_dim))
-        self.W_g = nn.Parameter(torch.randn(hidden_dim, input_dim))
+        # Use pytorch's initialization, to match behavior
+        std = 1.0 / math.sqrt(self.hidden_dim) if self.hidden_dim > 0 else 0
 
-        self.V_f = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
-        self.V_i = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
-        self.V_o = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
-        self.V_g = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
+        self.W_f = nn.Parameter(torch.empty(hidden_dim, input_dim).uniform_(-std, std))
+        self.W_i = nn.Parameter(torch.empty(hidden_dim, input_dim).uniform_(-std, std))
+        self.W_o = nn.Parameter(torch.empty(hidden_dim, input_dim).uniform_(-std, std))
+        self.W_g = nn.Parameter(torch.empty(hidden_dim, input_dim).uniform_(-std, std))
 
-        self.bias_f = nn.Parameter(torch.randn(hidden_dim))
-        self.bias_i = nn.Parameter(torch.randn(hidden_dim))
-        self.bias_o = nn.Parameter(torch.randn(hidden_dim))
-        self.bias_g = nn.Parameter(torch.randn(hidden_dim))
+        self.V_f = nn.Parameter(torch.empty(hidden_dim, hidden_dim).uniform_(-std, std))
+        self.V_i = nn.Parameter(torch.empty(hidden_dim, hidden_dim).uniform_(-std, std))
+        self.V_o = nn.Parameter(torch.empty(hidden_dim, hidden_dim).uniform_(-std, std))
+        self.V_g = nn.Parameter(torch.empty(hidden_dim, hidden_dim).uniform_(-std, std))
+
+        self.bias_f = nn.Parameter(torch.empty(hidden_dim).uniform_(-std, std))
+        self.bias_i = nn.Parameter(torch.empty(hidden_dim).uniform_(-std, std))
+        self.bias_o = nn.Parameter(torch.empty(hidden_dim).uniform_(-std, std))
+        self.bias_g = nn.Parameter(torch.empty(hidden_dim).uniform_(-std, std))
 
     def forward(self, x_t, h_prev, c_prev):
         """
