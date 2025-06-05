@@ -37,6 +37,12 @@ class Logger:
         self.reserved_mem        = []
         self.max_reserved_mem    = []
 
+    def update(self, outputs, targets, loss):
+        raise NotImplementedError(f'Update should only be called from a subclass.')
+
+    def log_epoch(self, stage):
+        raise NotImplementedError(f'Update should only be called from a subclass.')
+
     def update_memory(self):
         self.allocated_mem.append(memory_allocated())
         self.max_allocated_mem.append(max_memory_allocated())

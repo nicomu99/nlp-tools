@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
-from model.embedding import Embedding
-from model.dropout import Dropout
-from model.linear import Linear
-from model.lstm import LSTM
+from model import Embedding
+from model import Dropout
+from model import Linear
+from model import LSTM
 
 class CBiLSTM(nn.Module):
     def __init__(self,

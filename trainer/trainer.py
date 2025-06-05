@@ -1,4 +1,3 @@
-import csv
 from typing import Optional
 
 from tqdm import tqdm
@@ -9,11 +8,11 @@ from torch.utils.data import Dataset, BatchSampler, DataLoader
 
 from datasets import Dataset as HFDataset
 
-from logger.classification_logger import ClassificationLogger
-from tokenization.tokenizer import Tokenizer
-from nlp_dataset.nlp_dataset import NLPDataset
-from nlp_sampler.grouped_sampler import GroupedSampler
-from data_utils.data_utils import *
+from logger import ClassificationLogger, ARLMLogger
+from tokenization import Tokenizer
+from nlp_dataset import NLPDataset
+from nlp_sampler import GroupedSampler
+from data_utils import *
 
 
 class Trainer:
@@ -31,7 +30,8 @@ class Trainer:
                  learning_rate: float = 1e-4,
                  run_name: str = '',
                  early_stop: bool = False,
-                 early_stop_limit: int = 3
+                 early_stop_limit: int = 3,
+                 task: str = ''
                  ):
         if train_dataset is None:
             raise RuntimeError("Train dataset is missing.")
@@ -56,7 +56,14 @@ class Trainer:
         self.data_loaders = data_loaders
 
         self.run_name = run_name
-        self.logger = ClassificationLogger(self.run_name)
+
+        if task == 'classification':
+            self.logger = ClassificationLogger(self.run_name)
+        elif task == 'arlm':
+            self.logger = ARLMLogger(self.run_name)
+        else:
+            raise ValueError(f"Task {task} unknown. Must be 'classification' or 'arlm'")
+
 
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit

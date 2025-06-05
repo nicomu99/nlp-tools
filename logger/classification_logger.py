@@ -1,7 +1,7 @@
 import torch
 
-from logger.logger import Logger
-from data_utils.data_utils import f1_score
+from logger import Logger
+from data_utils import f1_score
 
 class ClassificationLogger(Logger):
     def __init__(self, run_name):
@@ -14,8 +14,8 @@ class ClassificationLogger(Logger):
         self.pred_labels    = []
         self.true_labels    = []
 
-    def init_epoch(self, epoch):
-        super().init_epoch(epoch)
+    def init_epoch(self):
+        super().init_epoch()
 
         self.processed = 0
         self.loss = 0
