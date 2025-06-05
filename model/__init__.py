@@ -4,3 +4,4 @@ from .linear import Linear
 from .lstm import LSTM
 from .lstm_cell import LSTMCell
 from .cbilstm import CBiLSTM
+from .bilstm import BiLSTM
