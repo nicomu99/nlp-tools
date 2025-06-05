@@ -49,7 +49,7 @@ class CBiLSTM(nn.Module):
         hidden = self.dropout_layer(hidden)
 
         # For computational efficiency pack the padded sequences
-        hidden = self.bilstm(hidden)
+        hidden, (_, _) = self.bilstm(hidden)
 
         # BiLSTM returns hidden representation for each index -> since we are only doing classification
         # we can pool into a single dimension

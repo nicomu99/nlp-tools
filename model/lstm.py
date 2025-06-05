@@ -52,6 +52,10 @@ class LSTM(nn.Module):
         batch_size, seq_len, _ = x.shape
 
         output = x
+        h_f = torch.zeros(batch_size, self.hidden_size, device=x.device)
+        c_f = torch.zeros(batch_size, self.hidden_size, device=x.device)
+        h_b = torch.zeros(x.shape[0], self.hidden_size, device=x.device)
+        c_b = torch.zeros(x.shape[0], self.hidden_size, device=x.device)
         for layer in range(self.num_layers):
             h_f = torch.zeros(batch_size, self.hidden_size, device=x.device)
             c_f = torch.zeros(batch_size, self.hidden_size, device=x.device)
@@ -80,4 +84,13 @@ class LSTM(nn.Module):
             else:
                 output = forward
 
-        return output
+
+        # To match pytorch
+        if self.bidirectional:
+            h_n = torch.stack([h_f, h_b], dim=0)
+            c_n = torch.stack([c_f, c_b], dim=0)
+        else:
+            h_n = h_f.unsqueeze(0)
+            c_n = c_f.unsqueeze(0)
+
+        return output, (h_n, c_n)
