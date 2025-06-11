@@ -33,6 +33,16 @@ class Trainer:
                  early_stop_limit: int = 3,
                  task: str = ''
                  ):
+
+        # Check task
+        self.run_name = run_name
+        if task == 'classification':
+            self.logger = ClassificationLogger(self.run_name)
+        elif task == 'arlm':
+            self.logger = ARLMLogger(self.run_name)
+        else:
+            raise ValueError(f"Task {task} unknown. Must be 'classification' or 'arlm'")
+
         if train_dataset is None:
             raise RuntimeError("Train dataset is missing.")
 
@@ -54,16 +64,6 @@ class Trainer:
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.data_loaders = data_loaders
-
-        self.run_name = run_name
-
-        if task == 'classification':
-            self.logger = ClassificationLogger(self.run_name)
-        elif task == 'arlm':
-            self.logger = ARLMLogger(self.run_name)
-        else:
-            raise ValueError(f"Task {task} unknown. Must be 'classification' or 'arlm'")
-
 
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
