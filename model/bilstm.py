@@ -51,7 +51,10 @@ class BiLSTM(nn.Module):
             out_features = 1
         )
 
-    def forward(self, seqs, lengths):
+    def forward(self, batch):
+        seqs = batch['input_ids']
+        lengths = batch['lengths']
+
         hidden = self.embedding(seqs)
         hidden = self.dropout_layer(hidden)
 

@@ -10,7 +10,7 @@ from datasets import Dataset as HFDataset
 
 from logger import ClassificationLogger, ARLMLogger
 from tokenization import Tokenizer
-from nlp_dataset import NLPDataset
+from nlp_dataset import NLPDataset, NLPClassDataset, NLPARLMDataset
 from nlp_sampler import GroupedSampler
 from data_utils import *
 
@@ -34,14 +34,15 @@ class Trainer:
                  task: str = ''
                  ):
 
-        # Check task
+        # Task is used control aspects of the training
         self.run_name = run_name
-        if task == 'classification':
+        self.task = task
+        if self.task == 'classification':
             self.logger = ClassificationLogger(self.run_name)
-        elif task == 'arlm':
+        elif self.task == 'arlm':
             self.logger = ARLMLogger(self.run_name)
         else:
-            raise ValueError(f"Task {task} unknown. Must be 'classification' or 'arlm'")
+            raise ValueError(f"Task {self.task} unknown. Must be 'classification' or 'arlm'")
 
         if train_dataset is None:
             raise RuntimeError("Train dataset is missing.")
@@ -81,14 +82,20 @@ class Trainer:
             self.test_dataset = self._prepare_dataset(test_dataset)
             self.test_dataloader = self._prepare_loader(self.test_dataset)
 
-    def _prepare_dataset(self, dataset: Dataset) -> NLPDataset:
-        return NLPDataset(
-            self.tokenizer(dataset['text']),
-            dataset['label']
-        )
+    def _prepare_dataset(self, dataset: HFDataset) -> NLPDataset:
+        if self.task == 'classification':
+            return NLPClassDataset(
+                self.tokenizer(dataset['text']),
+                dataset['label']
+            )
+        else:
+            return NLPARLMDataset(
+                self.tokenizer(dataset['text'])
+            )
 
-    def _prepare_loader(self, dataset: NLPDataset, add_batching: bool = False) -> DataLoader:
-        if add_batching:
+    def _prepare_loader(self, dataset: Dataset, add_batching: bool = False) -> DataLoader:
+        if add_batching and self.task == 'classification':
+            # On ARLM tasks, batching is not required
             batch_sampler = BatchSampler(
                 GroupedSampler(self.train_dataset.get_input_ids(), self.batch_size),
                 batch_size=self.batch_size,
@@ -106,7 +113,7 @@ class Trainer:
             data_loader = DataLoader(
                 dataset,
                 collate_fn=collate_batch,
-                shuffle=False,
+                shuffle=True,
                 num_workers=self.data_loaders
             )
 
@@ -127,24 +134,23 @@ class Trainer:
         self.model.train() if train else self.model.eval()
 
         self.logger.init_epoch()
-        for input_ids, labels, lengths in tqdm(loader, desc="Training" if train else "Validation"):
+        for batch in tqdm(loader, desc="Training" if train else "Validation"):
             torch.cuda.reset_peak_memory_stats()
 
-            input_ids   = input_ids.to(self.device)
-            labels      = labels.to(self.device)
+            batch = {k: v.to(self.device) for k, v in batch.items()}
 
             if train:
                 optimizer.zero_grad()
 
             with torch.set_grad_enabled(train):
-                outputs = self.model(input_ids, lengths)
-                loss = self.criterion(outputs, labels.float())
+                outputs = self.model(batch)
+                loss = self.criterion(outputs, batch['targets'].float())
 
                 if train:
                     loss.backward()
                     optimizer.step()
 
-            self.logger.update(outputs, labels, loss)
+            self.logger.update(outputs, batch['targets'], loss)
 
         self.logger.log_epoch(stage)
 

@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union, Dict
 
 import torch
 import numpy as np
@@ -13,12 +13,19 @@ def c_pad_sequence(sequence: list[int], pad_token: int, max_length: int) -> list
 def c_pad_sequences(sequences: list[list[int]], pad_token: int, max_length: int) -> list[list[int]]:
     return [c_pad_sequence(sequence, pad_token, max_length) for sequence in sequences]
 
-def collate_batch(batch: List[Tuple[List[int], int]]) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
+def collate_batch(
+        batch: List[Union[Tuple[List[int], int], Tuple[List[int], List[int]]]]
+) -> Dict:
     ids = [torch.tensor(index, dtype=torch.long) for (index, _) in batch]
     labels = torch.tensor([label for (_, label) in batch], dtype=torch.long)
     lengths = torch.tensor([len(seq) for seq in ids], dtype=torch.long)
     padded_indices = pad_sequence(ids, batch_first=True, padding_value=1)
-    return padded_indices, labels, lengths
+
+    return {
+        'input_ids': padded_indices,
+        'targets': labels,
+        'lengths': lengths
+    }
 
 def f1_score(predictions, labels):
     predictions = np.array(predictions)
