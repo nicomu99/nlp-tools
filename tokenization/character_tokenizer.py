@@ -19,7 +19,9 @@ class CharacterTokenizer(Tokenizer):
                 value_counts.update(character)
 
         for character, _ in value_counts.most_common(self.vocab_size - len(self.vocab)):
+            next_idx = len(self.vocab)
             self.vocab[character] = len(self.vocab)
+            self.idx_to_word[next_idx] = character
 
 
     def __call__(self, text: List[str]) -> List[List[int]]:

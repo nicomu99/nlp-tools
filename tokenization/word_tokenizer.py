@@ -11,7 +11,6 @@ class WordTokenizer(Tokenizer):
 
         self._build_vocab(dataset)
 
-
     def _build_vocab(self, dataset: list[str]):
         value_counts = Counter()
         for sequence in dataset:
@@ -19,8 +18,9 @@ class WordTokenizer(Tokenizer):
             value_counts.update(tokens)
 
         for word, _ in value_counts.most_common(self.vocab_size - len(self.vocab)):
-            self.vocab[word] = len(self.vocab)
-
+            next_idx = len(self.vocab)
+            self.vocab[word] = next_idx
+            self.idx_to_word[next_idx] = word
 
     def __call__(self, text: list[str]) -> list[list[int]]:
         tokens = []
@@ -28,7 +28,6 @@ class WordTokenizer(Tokenizer):
             tokens.append(self.tokenize(sequence))
 
         return tokens
-
 
     def tokenize(self, text: str) -> list[int]:
         tokens = []
