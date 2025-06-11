@@ -26,3 +26,6 @@ class Tokenizer:
 
     def get_pad_token(self) -> int:
         raise NotImplementedError("Tokenizer should not be instantiated. Please use a subclass.")
+
+    def __len__(self):
+        return len(self.vocab)
