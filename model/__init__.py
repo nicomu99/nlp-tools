@@ -3,5 +3,6 @@ from .dropout import Dropout
 from .linear import Linear
 from .lstm import LSTM
 from .lstm_cell import LSTMCell
-from .cbilstm import CBiLSTM
-from .bilstm import BiLSTM
+from .cbilstm_classification import CBiLSTMForClassification
+from .bilstm_classification import BiLSTMForClassification
+from .lstm_arlm import LSTMForARLM

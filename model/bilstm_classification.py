@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
-class BiLSTM(nn.Module):
+class BiLSTMForClassification(nn.Module):
     def __init__(self,
                  vocab_size: int,
                  embedding_dim: int,

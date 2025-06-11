@@ -6,7 +6,7 @@ from model import Dropout
 from model import Linear
 from model import LSTM
 
-class CBiLSTM(nn.Module):
+class CBiLSTMForClassification(nn.Module):
     def __init__(self,
                  vocab_size: int,
                  embedding_dim: int,
