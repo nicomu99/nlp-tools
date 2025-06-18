@@ -31,7 +31,8 @@ class Trainer:
                  run_name: str = '',
                  early_stop: bool = False,
                  early_stop_limit: int = 3,
-                 task: str = ''
+                 task: str = '',
+                 block_size: Optional[int] = 128
                  ):
 
         # Task is used control aspects of the training
@@ -65,12 +66,13 @@ class Trainer:
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.data_loaders = data_loaders
+        self.block_size = block_size        # For ARLM
 
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
 
         self.train_dataset = self._prepare_dataset(train_dataset)
-        self.train_dataloader = self._prepare_loader(self.train_dataset, add_batching=True)
+        self.train_dataloader = self._prepare_loader(self.train_dataset, batch_sampling=True)
 
         self.eval_dataset = eval_dataset
         if self.eval_dataset is not None:
@@ -90,12 +92,13 @@ class Trainer:
             )
         else:
             return NLPARLMDataset(
-                self.tokenizer(dataset['text'])
+                self.tokenizer(dataset['text']),
+                block_size=self.block_size
             )
 
-    def _prepare_loader(self, dataset: Dataset, add_batching: bool = False) -> DataLoader:
-        if add_batching and self.task == 'classification':
-            # On ARLM tasks, batching is not required
+    def _prepare_loader(self, dataset: Dataset, batch_sampling: bool = False) -> DataLoader:
+        if batch_sampling and self.task == 'classification':
+            # On ARLM tasks, grouping is not required
             batch_sampler = BatchSampler(
                 GroupedSampler(self.train_dataset.get_input_ids(), self.batch_size),
                 batch_size=self.batch_size,
@@ -105,6 +108,13 @@ class Trainer:
             data_loader = DataLoader(
                 dataset,
                 batch_sampler=batch_sampler,
+                collate_fn=collate_batch,
+                num_workers=self.data_loaders
+            )
+        elif batch_sampling:
+            data_loader = DataLoader(
+                dataset,
+                batch_size=32,
                 collate_fn=collate_batch,
                 num_workers=self.data_loaders
             )
@@ -144,7 +154,8 @@ class Trainer:
 
             with torch.set_grad_enabled(train):
                 outputs = self.model(batch)
-                loss = self.criterion(outputs, batch['targets'].float())
+                # loss = self.criterion(outputs, batch['targets'].float()) # Classification
+                loss = self.criterion(outputs, batch['targets'])
 
                 if train:
                     loss.backward()
@@ -161,6 +172,7 @@ class Trainer:
         # early_stop_epoch = 0
         # best_f1 = 0
         for epoch in range(self.num_epochs):
+            print(f'Epoch {epoch + 1} - Training')
 
             self.process_one_epoch(self.train_dataloader, self.optimizer, stage='train')
 
@@ -168,6 +180,8 @@ class Trainer:
                 self.process_one_epoch(self.eval_dataloader, stage='eval')
 
             self.logger.update_epoch()
+
+        self.logger.save_model(self.model.state_dict().copy())
             # val_f1 = val_metrics['f1']
             # if val_f1 > best_f1:
             #     # Save best model performance
