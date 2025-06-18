@@ -6,3 +6,4 @@ from .lstm_cell import LSTMCell
 from .cbilstm_classification import CBiLSTMForClassification
 from .bilstm_classification import BiLSTMForClassification
 from .lstm_arlm import LSTMForARLM
+from .vanilla_rnn import VanillaRNN

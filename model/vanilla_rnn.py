@@ -5,24 +5,28 @@ class VanillaRNN(nn.Module):
     def __init__(
             self,
             input_size: int,
-            hidden_size: int
+            hidden_size: int,
+            num_layers: int = 1
     ):
         super().__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.num_layers = num_layers
 
-        self.W = nn.Parameter(
-            torch.randn(self.hidden_size, self.input_size)
-        )
 
-        self.V = nn.Parameter(
-            torch.randn(self.hidden_size, self.hidden_size)
-        )
+        self.W = nn.ParameterList([
+            nn.Parameter(torch.randn(self.hidden_size, input_size if i == 0 else hidden_size))
+            for i in range(num_layers)
+        ])
 
-        self.b = nn.Parameter(
-            torch.randn(self.hidden_size)
-        )
+        self.V = nn.ParameterList([
+            nn.Parameter(torch.randn(self.hidden_size, self.hidden_size)) for i in range(num_layers)
+        ])
+
+        self.b = nn.ParameterList([
+            nn.Parameter(torch.randn(self.hidden_size)) for _ in range(num_layers)
+        ])
 
     def forward(self, x: torch.Tensor):
         """
@@ -39,16 +43,20 @@ class VanillaRNN(nn.Module):
         batch_size, seq_len, _ = x.size()
 
         output = []
-        h = torch.zeros(batch_size, self.hidden_size, device=x.device)
-        for i in range(seq_len):
-            prev_h = h
-            x_i = x[:, i, :]
+        h_t = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=x.device)
+        for t in range(seq_len):
+            x_t = x[:, t, :]
+            new_h_t = []
+            for layer in range(self.num_layers):
+                h_prev = h_t[layer]
+                h_curr = torch.tanh(
+                    x_t @ self.W[layer].T + self.V[layer] @ h_prev[layer] + self.b[layer]
+                )
+                new_h_t.append(h_curr)
+                x_t = h_curr
 
-            h = torch.tanh(
-                x_i @ self.W.T + self.V @ prev_h + self.b
-            )
-
-            output.append(h)
+            h_t = torch.stack(new_h_t, dim=0)
+            output.append(h_t[-1])
 
         output = torch.stack(output, dim=1)
-        return output
+        return output, h_t
