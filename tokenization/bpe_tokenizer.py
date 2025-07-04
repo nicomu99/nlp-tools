@@ -11,7 +11,7 @@ class BPETokenizer(Tokenizer):
 
         self.num_merges = num_merges
         self.bpe_merges = []
-        self.eow_token = '</w'
+        self.eow_token = '</w>'
         self._build_vocab(dataset)
 
     @staticmethod
