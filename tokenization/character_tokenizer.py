@@ -1,5 +1,7 @@
 from typing import List
 
+from tqdm import tqdm
+
 from tokenization.tokenizer import Tokenizer
 from collections import Counter
 
@@ -14,7 +16,7 @@ class CharacterTokenizer(Tokenizer):
 
     def _build_vocab(self, dataset: list[str]):
         value_counts = Counter()
-        for sequence in dataset:
+        for sequence in tqdm(dataset):
             for character in sequence:
                 value_counts.update(character)
 
