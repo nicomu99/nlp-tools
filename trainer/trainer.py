@@ -35,8 +35,9 @@ class Trainer:
                  block_size: Optional[int] = 128
                  ):
 
-        # Task is used control aspects of the training
         self.run_name = run_name
+
+        # Task is used control aspects of the training
         self.task = task
         if self.task == 'classification':
             self.logger = ClassificationLogger(self.run_name)

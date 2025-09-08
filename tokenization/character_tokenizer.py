@@ -39,7 +39,7 @@ class CharacterTokenizer(Tokenizer):
         for character in text:
             tokens.append(self.vocab.get(character, self.vocab[self.unknown_token]))
 
-        return tokens
+        return tokens[:self.max_length]
 
     def get_pad_token(self) -> int:
         return self.vocab[self.pad_token]
