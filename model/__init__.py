@@ -7,3 +7,10 @@ from .cbilstm_classification import CBiLSTMForClassification
 from .bilstm_classification import BiLSTMForClassification
 from .lstm_arlm import LSTMForARLM
 from .vanilla_rnn import VanillaRNN
+from .transformer.transform import Transformer
+from .transformer.decoder_block import DecoderBlock
+from .transformer.decoder import Decoder
+from .transformer.encoder import Encoder
+from .transformer.feed_forward import FFNetwork
+from .transformer.multi_head_attention import MultiHeadAttention
+from .transformer.transformer_block import TransformerBlock
