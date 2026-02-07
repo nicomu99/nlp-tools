@@ -1,7 +1,9 @@
 import re
+from collections import Counter
+
+from tqdm import tqdm
 
 from tokenization.tokenizer import Tokenizer
-from collections import Counter
 
 class WordTokenizer(Tokenizer):
     def __init__(self, dataset: list[str], vocab_size: int=10_000, max_length: int=-1,
@@ -13,7 +15,7 @@ class WordTokenizer(Tokenizer):
 
     def _build_vocab(self, dataset: list[str]):
         value_counts = Counter()
-        for sequence in dataset:
+        for sequence in tqdm(dataset):
             tokens = re.findall(r"\w+(?:'\w+)?|[^\w\s]", sequence.lower())
             value_counts.update(tokens)
 
