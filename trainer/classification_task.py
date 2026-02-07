@@ -2,15 +2,13 @@ from datasets import Dataset as HFDataset
 from torch.utils.data import BatchSampler, DataLoader
 
 from nlp_dataset import NLPClassDataset
-from logger import Logger
 from tokenization import Tokenizer
 from nlp_sampler import GroupedSampler
 from data_utils import *
 
 
 class ClassificationTask:
-    def __init__(self, run_name, criterion):
-        self.logger = Logger(run_name)
+    def __init__(self, criterion):
         self.criterion = criterion
 
         self.processed = 0
@@ -20,8 +18,6 @@ class ClassificationTask:
         self.true_labels = []
 
     def init_epoch(self):
-        self.logger.init_epoch()
-
         self.processed = 0
         self.loss = 0
         self.correct = 0
@@ -50,24 +46,15 @@ class ClassificationTask:
         self.pred_labels.extend(predictions.cpu().tolist())
         self.true_labels.extend(targets.cpu().tolist())
 
-        self.logger.update()
-
         return loss
 
-    def finish_epoch(self, epoch: int, stage: str = "train"):
-        """
-        Compute metrics and write to tensorboard.
-        """
+    def get_epoch_stats(self):
         metric_dir = {
-            "epoch": epoch,
             "loss": self.loss / self.processed,
             "accuracy": self.correct / self.processed,
             "f1": f1_score(self.pred_labels, self.true_labels)
         }
-        self.logger.log_epoch(stage, metric_dir)
-
-    def close(self):
-        self.logger.close()
+        return metric_dir
 
     @staticmethod
     def get_data_loader(

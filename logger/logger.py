@@ -26,7 +26,6 @@ class Logger:
         self.writer = SummaryWriter(f"runs/{run_name}")
 
         # Memory stats to save
-        self.epoch = 0
         self.allocated_mem = []
         self.max_allocated_mem = []
         self.reserved_mem = []
@@ -42,15 +41,21 @@ class Logger:
         self.reserved_mem = []
         self.max_reserved_mem = []
 
-    def log_epoch(self, stage: str, metrics_dir: dict):
+    def log_epoch(
+        self,
+        stage: str,
+        epoch: int,
+        metrics_dir: dict
+    ):
         """Log aggregated metrics and GPU memory statistics for an epoch.
 
         All provided metrics are logged under ``{stage}/`` and memory
         statistics under ``mem/{stage}/`` in TensorBoard.
 
         Args:
-            stage: Stage identifier (e.g. "train", "eval" or "test")
-            metrics_dir: A dictionary mapping metric names to scalar values.
+            stage (str): Stage identifier (e.g. "train", "eval" or "test").
+            epoch (int): Current epoch.
+            metrics_dir (dict): A dictionary mapping metric names to scalar values.
         """
         metrics_dir = {f"{stage}/{k}": v for k, v in metrics_dir.items()}
 
@@ -60,7 +65,7 @@ class Logger:
         metrics_dir[f"mem/{stage}/max_reserved_mem"] = np.mean(self.max_allocated_mem)
 
         for key, metric in metrics_dir.items():
-            self.writer.add_scalar(key, metric, self.epoch)
+            self.writer.add_scalar(key, metric, epoch)
         self.writer.flush()
 
     def update(self):
