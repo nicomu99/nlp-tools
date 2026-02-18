@@ -28,7 +28,7 @@ class CharacterTokenizer(Tokenizer):
             self.vocab[character] = len(self.vocab)
             self.idx_to_word[next_idx] = character
 
-    def __call__(self, text: list[str]) -> dict:
+    def __call__(self, text: str) -> dict:
         tokens = []
         for character in text:
             tokens.append(self.vocab.get(character, self.vocab[self.unknown_token]))

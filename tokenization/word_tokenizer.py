@@ -30,7 +30,7 @@ class WordTokenizer(Tokenizer):
             self.vocab[word] = next_idx
             self.idx_to_word[next_idx] = word
 
-    def __call__(self, text: list[str]) -> dict:
+    def __call__(self, text: str) -> dict:
         tokens = []
         for word in re.findall(r"\w+(?:'\w+)?|[^\w\s]", text.lower()):
             tokens.append(self.vocab.get(word, self.vocab[self.unknown_token]))

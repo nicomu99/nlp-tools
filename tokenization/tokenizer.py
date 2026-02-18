@@ -28,7 +28,7 @@ class Tokenizer:
     def _build_vocab(self, dataset: list[str]):
         raise NotImplementedError("Tokenizer should not be instantiated. Please use a subclass.")
 
-    def __call__(self, text: list[str]) -> dict:
+    def __call__(self, text: str) -> dict:
         raise NotImplementedError("Tokenizer should not be instantiated. Please use a subclass.")
 
     def get_pad_token(self) -> int:
