@@ -1,9 +1,10 @@
+"""Word-level tokenizer implementation."""
 import re
 from collections import Counter
 
 from tqdm import tqdm
 
-from tokenization.tokenizer import Tokenizer
+from .tokenizer import Tokenizer
 
 
 class WordTokenizer(Tokenizer):
@@ -12,9 +13,9 @@ class WordTokenizer(Tokenizer):
         dataset: list[str],
         vocab_size: int = 10_000,
         max_length: int = -1,
-        unknown_token: str = '<UNK>',
-        pad_token: str = '<PAD',
-        special_tokens=None
+        unknown_token: str = "<UNK>",
+        pad_token: str = "<PAD",
+        special_tokens: list | None = None
     ):
         super().__init__(vocab_size, max_length, unknown_token, pad_token, special_tokens)
         self._build_vocab(dataset)
@@ -38,6 +39,3 @@ class WordTokenizer(Tokenizer):
         if self.max_length > 0:
             tokens = tokens[:self.max_length]
         return {"input_ids": tokens}
-
-    def get_pad_token(self) -> int:
-        return self.vocab[self.pad_token]

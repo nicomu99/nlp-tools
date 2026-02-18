@@ -1,7 +1,9 @@
+"""Character-level tokenizer implementation"""
+from collections import Counter
+
 from tqdm import tqdm
 
-from tokenization.tokenizer import Tokenizer
-from collections import Counter
+from .tokenizer import Tokenizer
 
 
 class CharacterTokenizer(Tokenizer):
