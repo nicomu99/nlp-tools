@@ -1,3 +1,4 @@
+"""Grouped Sampler."""
 from typing import Iterator
 import random
 
@@ -5,9 +6,18 @@ from torch.utils.data import Sampler
 
 
 class GroupedSampler(Sampler):
-    def __init__(self, input_ids: list[list[int]], batch_size: int):
-        """
-        Initialize the grouped sampler. Create a list of sequence lengths.
+    def __init__(
+        self,
+        input_ids: list[list[int]],
+        size_multiplier: int
+    ):
+        """Initializes a grouped sampler and creates a list of sequence lengths.
+
+        The grouped sampler returns the input features in groups, where each group is sorted by the sequence length.
+
+        Args:
+            input_ids (list[list[int]]): Tokenized input features.
+            size_multiplier (int): Size multiplier of the groups.
 
         :param input_ids: Torch tensor of input features to be sorted.
         :param batch_size: The training batch size.
@@ -15,18 +25,20 @@ class GroupedSampler(Sampler):
         super().__init__()
 
         self.sequence_count = len(input_ids)
-        self.batch_size = batch_size
-        self.group_batch_size = self.batch_size * 100
+        self.size_multiplier = size_multiplier
+        self.group_batch_size = self.size_multiplier * 100
 
         # Pair each sequence index with its tokenized sequence length
         self.seq_length_index = [(index, len(sequence)) for index, sequence in enumerate(input_ids)]
 
     def __iter__(self) -> Iterator[int]:
-        """
-        Shuffles the data, creates groups of some pre-defined size and sorts each group by the length of the inputs in
+        """Iterator over the indices of the dataset.
+
+        Shuffles the data, creates groups of a pre-defined size and sorts each group by the length of the inputs in
         descending order.
 
-        :return: An iterator over the input ids.
+        Returns:
+            Iterator[int]: An iterator over the input id indices.
         """
         # Shuffle the list
         random.shuffle(self.seq_length_index)
