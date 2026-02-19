@@ -58,7 +58,7 @@ class Task(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_dataset(dataset: HFDataset) -> NLPDataset:
+    def get_dataset(dataset: HFDataset, **kwargs) -> NLPDataset:
         """Converts a HuggingFace dataset into a task-specific dataset.
 
         This method adapts a generic HuggingFace `datasets.Dataset` into

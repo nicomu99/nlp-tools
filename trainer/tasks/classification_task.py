@@ -1,7 +1,7 @@
 """Implementation class for classification tasks."""
 from datasets import Dataset as HFDataset
 
-from trainer.nlp_dataset.nlp_dataset import NLPDataset
+from trainer.nlp_dataset import NLPClassDataset, NLPDataset
 from trainer.utils import f1_score
 
 from .task import Task
@@ -27,8 +27,6 @@ class ClassificationTask(Task):
     def process_step(self, model: nn.Module, batch: dict[str, torch.Tensor]) -> float:
         if "targets" not in batch:
             raise ValueError("Invalid batch format, missing key 'targets'")
-        if "input_ids" not in batch:
-            raise ValueError("Invalid batch format, missing key 'input_ids'")
 
         batch_size = batch["targets"].shape[0]
         targets = batch["targets"].float()
@@ -57,13 +55,5 @@ class ClassificationTask(Task):
         return metric_dir
 
     @staticmethod
-    def get_dataset(dataset: HFDataset) -> NLPDataset:
-        if "input_ids" not in dataset.column_names:
-            raise ValueError("Invalid dataset format. Could not find column \"input_ids\"")
-        if "label" not in dataset.column_names:
-            raise ValueError("Invalid dataset format. Could not find column \"label\"")
-
-        return NLPClassDataset(
-            dataset["input_ids"],
-            dataset["label"]
-        )
+    def get_dataset(dataset: HFDataset, **kwargs) -> NLPDataset:
+        return NLPClassDataset.from_hf(dataset)
