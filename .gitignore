@@ -2,5 +2,6 @@
 
 /out/
 /prev_tests/
+/runs/
 
 *.ipynb
