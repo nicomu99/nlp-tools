@@ -1,13 +1,13 @@
+"""Implementation class for classification tasks."""
 from datasets import Dataset as HFDataset
-from torch.utils.data import BatchSampler, DataLoader
 
-from nlp_dataset import NLPClassDataset
-from tokenization import Tokenizer
-from nlp_sampler import GroupedSampler
-from data_utils import *
+from trainer.nlp_dataset.nlp_dataset import NLPDataset
+from trainer.utils import f1_score
+
+from .task import Task
 
 
-class ClassificationTask:
+class ClassificationTask(Task):
     def __init__(self, criterion):
         self.criterion = criterion
 
@@ -24,7 +24,7 @@ class ClassificationTask:
         self.pred_labels = []
         self.true_labels = []
 
-    def process_step(self, model, batch):
+    def process_step(self, model: nn.Module, batch: dict[str, torch.Tensor]) -> float:
         if "targets" not in batch:
             raise ValueError("Invalid batch format, missing key 'targets'")
         if "input_ids" not in batch:
@@ -48,7 +48,7 @@ class ClassificationTask:
 
         return loss
 
-    def get_epoch_stats(self):
+    def get_epoch_stats(self) -> dict:
         metric_dir = {
             "loss": self.loss / self.processed,
             "accuracy": self.correct / self.processed,
@@ -57,34 +57,13 @@ class ClassificationTask:
         return metric_dir
 
     @staticmethod
-    def get_data_loader(
-            tokenizer: Tokenizer, dataset: HFDataset, batch_size: int, data_loaders: int, split: str = "train"
-    ):
-        dataset = NLPClassDataset(
-            tokenizer(dataset["text"]),
+    def get_dataset(dataset: HFDataset) -> NLPDataset:
+        if "input_ids" not in dataset.column_names:
+            raise ValueError("Invalid dataset format. Could not find column \"input_ids\"")
+        if "label" not in dataset.column_names:
+            raise ValueError("Invalid dataset format. Could not find column \"label\"")
+
+        return NLPClassDataset(
+            dataset["input_ids"],
             dataset["label"]
         )
-
-        if split == "train":
-            batch_sampler = BatchSampler(
-                GroupedSampler(dataset.get_input_ids(), batch_size),
-                batch_size=batch_size,
-                drop_last=True
-            )
-
-            data_loader = DataLoader(
-                dataset,
-                batch_sampler=batch_sampler,
-                collate_fn=collate_batch,
-                num_workers=data_loaders
-            )
-
-        else:
-            data_loader = DataLoader(
-                dataset,
-                batch_size=batch_size,
-                collate_fn=collate_batch,
-                num_workers=data_loaders
-            )
-
-        return data_loader
