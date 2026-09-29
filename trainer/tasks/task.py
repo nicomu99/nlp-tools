@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from datasets import Dataset as HFDataset
-from trainer.nlp_dataset.nlp_dataset import NLPDataset
+from trainer.nlp_dataset import NLPDataset
 
 
 class Task(ABC):

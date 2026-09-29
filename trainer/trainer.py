@@ -3,51 +3,43 @@ from typing import Optional
 
 from tqdm import tqdm
 
+import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import Dataset, BatchSampler, DataLoader
+from torch.optim import Optimizer, Adam
+from torch.utils.data import Dataset, DataLoader
 
 from datasets import Dataset as HFDataset
 
-from tokenization import Tokenizer
-from nlp_dataset import NLPDataset, NLPClassDataset, NLPARLMDataset
-from nlp_sampler import GroupedSampler
-from logger import Logger
-from data_utils import *
-from .classification_task import ClassificationTask
+from .tokenization import Tokenizer
+from .tasks import ClassificationTask, ARLMTask
+from .utils import collate_batch
+from .logger import Logger
 
 
 class Trainer:
     def __init__(
-        self,
-        task: str,
-        model: nn.Module,
-        tokenizer: Tokenizer,
-        criterion: nn.Module,
-        train_dataset: HFDataset,
-        eval_dataset: HFDataset = None,
-        test_dataset: HFDataset = None,
-        optimizer: torch.optim.Optimizer = None,
-        num_epochs: int = 3,
-        batch_size: int = 32,
-        data_loaders: int = 2,
-        learning_rate: float = 1e-4,
-        run_name: str = "",
-        early_stop: bool = False,
-        early_stop_limit: int = 3,
-        block_size: Optional[int] = 128
+            self,
+            task: str,
+            model: nn.Module,
+            tokenizer: Tokenizer,
+            criterion: nn.Module,
+            train_dataset: HFDataset,
+            eval_dataset: HFDataset = None,
+            test_dataset: HFDataset = None,
+            train_dataloader: DataLoader = None,
+            optimizer: Optimizer = None,
+            num_epochs: int = 3,
+            train_batch_size: int = 32,
+            eval_batch_size: int = 1,
+            data_loaders: int = 2,
+            learning_rate: float = 1e-4,
+            run_name: str = "",
+            early_stop: bool = False,
+            early_stop_limit: int = 3,
+            block_size: Optional[int] = 128
     ):
         self.run_name = run_name
         self.logger = Logger(run_name)
-
-        # Task is used control aspects of the training
-        if self.task == 'classification':
-            self.logger = ClassificationLogger(self.run_name)
-        elif self.task == 'arlm':
-            self.logger = ARLMLogger(self.run_name)
-        if task is None:
-            raise RuntimeError("Task is missing.")
-        self.task = task
 
         if train_dataset is None:
             raise RuntimeError("Train dataset is missing.")
@@ -59,7 +51,7 @@ class Trainer:
             raise RuntimeError("Criterion is missing.")
 
         if optimizer is None:
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+            optimizer = Adam(model.parameters(), lr=learning_rate)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
@@ -69,49 +61,39 @@ class Trainer:
         self.optimizer = optimizer
         self.current_epoch = 0
         self.num_epochs = num_epochs
-        self.batch_size = batch_size
+        self.train_batch_size = train_batch_size
+        self.eval_batch_size = eval_batch_size
         self.data_loaders = data_loaders
         self.block_size = block_size  # For ARLM
+
+        # Task is used control aspects of the training
+        if task == "classification":
+            self.task = ClassificationTask(self.criterion)  # TODO: Fix typing in task
+        elif task == "arlm":
+            self.task = ARLMTask(self.criterion)  # TODO: Fix typing in task
+        else:
+            raise ValuError(f"Unknown task identifier {task}. Must be \"classification\" or \"arlm\".")
 
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
 
-        self.train_dataloader = task.get_data_loader(self.tokenizer, train_dataset, batch_size, data_loaders)
+        self.train_dataset = train_dataset
+        self.eval_dataset = eval_dataset
+        self.test_dataset = test_dataset
 
-        if eval_dataset is not None:
-            self.eval_dataloader = task.get_data_loader(self.tokenizer, eval_dataset, batch_size, data_loaders, "eval")
-
-        if test_dataset is not None:
-            self.test_dataloader = task.get_data_loader(self.tokenizer, eval_dataset, batch_size, data_loaders, "test")
-
-    def _prepare_dataset(self, dataset: HFDataset) -> NLPDataset:
-        if self.task == "classification":
-            return NLPClassDataset(
-                self.tokenizer(dataset["text"]),
-                dataset["label"]
-            )
-        else:
-            return NLPARLMDataset(
-                self.tokenizer(dataset["text"]),
-                block_size=self.block_size
-            )
+        self.train_dataloader = train_dataloader
+        self.eval_dataloader = None
+        # self.task.get_data_loader(self.tokenizer, train_dataset, batch_size, data_loaders)
+        # if eval_dataset is not None:
+        #     self.eval_dataloader = self.task.get_data_loader(self.tokenizer, eval_dataset, batch_size, data_loaders,
+        #                                                      "eval")
+        #
+        # if test_dataset is not None:
+        #     self.test_dataloader = self.task.get_data_loader(self.tokenizer, eval_dataset, batch_size, data_loaders,
+        #                                                   "test")
 
     def _prepare_loader(self, dataset: Dataset, batch_sampling: bool = False) -> DataLoader:
-        if batch_sampling and self.task == "classification":
-            # On ARLM tasks, grouping is not required
-            batch_sampler = BatchSampler(
-                GroupedSampler(self.train_dataset.get_input_ids(), self.batch_size),
-                batch_size=self.batch_size,
-                drop_last=True
-            )
-
-            data_loader = DataLoader(
-                dataset,
-                batch_sampler=batch_sampler,
-                collate_fn=collate_batch,
-                num_workers=self.data_loaders
-            )
-        elif batch_sampling:
+        if batch_sampling:
             data_loader = DataLoader(
                 dataset,
                 batch_size=32,
@@ -129,11 +111,38 @@ class Trainer:
 
         return data_loader
 
+    def _prepare_for_training(self):
+        # Tokenize the inputs
+        self.train_dataset = self.tokenize(self.train_dataset)
+        self.eval_dataset = self.tokenize(self.eval_dataset)
+        # self.test_dataset = self.tokenize(self.test_dataset)
+
+        # Create dataloaders
+        kwargs = {"block_size": self.block_size}
+        train_dataset = self.task.get_dataset(self.train_dataset, **kwargs)
+        eval_dataset = self.task.get_dataset(self.eval_dataset, **kwargs)
+
+        if self.train_dataloader is None:
+            self.train_dataloader = DataLoader(
+                train_dataset,
+                batch_size=self.train_batch_size,
+                collate_fn=collate_batch,
+                num_workers=self.data_loaders
+            )
+
+        if self.eval_dataloader is None:
+            self.eval_dataloader = DataLoader(
+                eval_dataset,
+                batch_size=self.eval_batch_size,
+                collate_fn=collate_batch,
+                num_workers=self.data_loaders
+            )
+
     def process_one_epoch(
-        self,
-        loader: torch.utils.data.DataLoader,
-        optimizer: Optional[torch.optim.Optimizer] = None,
-        stage: str = ""
+            self,
+            loader: DataLoader,
+            optimizer: Optimizer | None = None,
+            stage: str = ""
     ):
         """
         Processes one training or validation step for a given model.
@@ -146,7 +155,7 @@ class Trainer:
 
         self.task.init_epoch()
         self.logger.init_epoch()
-        for batch in tqdm(loader, desc="Training" if train else "Validation"):
+        for batch in loader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
 
             torch.cuda.reset_peak_memory_stats()
@@ -162,15 +171,28 @@ class Trainer:
                 self.logger.update()
 
         metric_dir = self.task.get_epoch_stats()
-        self.logger.log_epoch(stage, epoch, metric_dir)
+        self.logger.log_epoch(stage, self.current_epoch, metric_dir)
+
+    def tokenize_row(self, features: str):
+        return self.tokenizer(features)
+
+    def tokenize(self, dataset: HFDataset):
+        if "text" not in dataset.column_names:
+            raise ValueError("Invalid dataset format, could not find column \"text\"")
+        if "input_ids" in dataset.column_names:
+            return dataset
+
+        dataset = dataset.map(lambda examples: self.tokenize_row(examples["text"]))
+        return dataset
 
     def train(self):
+        self._prepare_for_training()
 
         # early_stop_epoch = 0
         # best_f1 = 0
-        for epoch in range(self.num_epochs):
+        for _ in tqdm(range(self.num_epochs)):
             self.current_epoch += 1
-            print(f"Epoch {self.current_epoch} - Training")
+            # print(f"Epoch {self.current_epoch} - Training")
 
             self.process_one_epoch(self.train_dataloader, self.optimizer, stage="train")
 

@@ -1,4 +1,6 @@
 """Classification dataset that returns a single label."""
+from datasets import Dataset as HFDataset
+
 from .nlp_dataset import NLPDataset
 
 
@@ -43,7 +45,7 @@ class NLPClassDataset(NLPDataset):
         return self.input_ids[index], self.labels[index]
 
     @classmethod
-    def from_hf(cls, dataset: HFDataset) -> NLPClassDataset:
+    def from_hf(cls, dataset: HFDataset):
         """Creates a classification dataset from a HuggingFace dataset.
 
         This method converts a HuggingFace `datasets.Dataset` into an

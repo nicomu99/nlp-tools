@@ -1,3 +1,4 @@
+"""Trainer module."""
 from .trainer import Trainer
 
 from .tasks import ARLMTask

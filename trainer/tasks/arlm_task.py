@@ -1,4 +1,6 @@
 """Implementation class for arlm tasks."""
+import torch
+import torch.nn as nn
 from datasets import Dataset as HFDataset
 
 from trainer.nlp_dataset import NLPARLMDataset, NLPDataset
@@ -22,7 +24,7 @@ class ARLMTask(Task):
             raise ValueError("Invalid batch format, missing key 'targets'")
 
         batch_size = batch["targets"].shape[0]
-        targets = batch["targets"].float()
+        targets = batch["targets"]
 
         outputs = model(batch)
         loss = self.criterion(outputs, targets)

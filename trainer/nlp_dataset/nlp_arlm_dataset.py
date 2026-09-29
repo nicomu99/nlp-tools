@@ -1,4 +1,6 @@
 """ARLM dataset that returns input/target pairs for autoregressive language modeling."""
+from datasets import Dataset as HFDataset
+
 from .nlp_dataset import NLPDataset
 
 
@@ -57,7 +59,7 @@ class NLPARLMDataset(NLPDataset):
         return input_ids[:-1], input_ids[1:]  # (0, 1, ..., t-1), (1, 2, ..., t)
 
     @classmethod
-    def from_hf(cls, dataset: HFDataset, block_size: int) -> NLPARLMDataset:
+    def from_hf(cls, dataset: HFDataset, block_size: int):
         """Creates an ARLM dataset from a HuggingFace dataset.
 
         This method converts a HuggingFace `datasets.Dataset` into an

@@ -1,4 +1,6 @@
 """Implementation class for classification tasks."""
+import torch
+import torch.nn as nn
 from datasets import Dataset as HFDataset
 
 from trainer.nlp_dataset import NLPClassDataset, NLPDataset

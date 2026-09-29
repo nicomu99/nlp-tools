@@ -1,6 +1,7 @@
 """Base dataset class."""
 from abc import ABC, abstractmethod
 from torch.utils.data import Dataset
+from datasets import Dataset as HFDataset
 
 
 class NLPDataset(Dataset, ABC):
@@ -51,8 +52,8 @@ class NLPDataset(Dataset, ABC):
 
     @staticmethod
     def _validate_columns(
-            dataset: HFDataset,
-            required_columns: set[str],
+        dataset: HFDataset,
+        required_columns: set[str],
     ) -> None:
         """Validates that a HuggingFace dataset contains required columns.
 
