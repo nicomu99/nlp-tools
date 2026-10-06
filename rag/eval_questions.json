@@ -1,0 +1,18 @@
+[
+  {"question": "How many vacation days do I get per year?", "source": "vacation.md", "answer_contains": ["27"]},
+  {"question": "Until when can I use vacation days I carried over from last year?", "source": "vacation.md", "answer_contains": ["March 31"]},
+  {"question": "Do I need a doctor's note if I'm sick for two days?", "source": "sick-leave.md", "answer_contains": ["no", "not"]},
+  {"question": "How much is the monthly home office stipend?", "source": "remote-work.md", "answer_contains": ["40"]},
+  {"question": "Which time zones am I allowed to work from?", "source": "remote-work.md", "answer_contains": ["UTC-1"]},
+  {"question": "What is the name of the espresso machine?", "source": "office.md", "answer_contains": ["Bertha"]},
+  {"question": "Where can I find the guest Wi-Fi password?", "source": "office.md", "answer_contains": ["whiteboard"]},
+  {"question": "Up to what amount are expenses approved automatically?", "source": "expenses.md", "answer_contains": ["75"]},
+  {"question": "What is the hotel limit per night in Paris?", "source": "expenses.md", "answer_contains": ["200"]},
+  {"question": "How often are laptops replaced?", "source": "equipment.md", "answer_contains": ["three", "3"]},
+  {"question": "When does an on-call rotation start?", "source": "on-call.md", "answer_contains": ["Tuesday"]},
+  {"question": "How much extra pay do I get for an on-call week?", "source": "on-call.md", "answer_contains": ["350"]},
+  {"question": "What is the first week for new hires called?", "source": "onboarding.md", "answer_contains": ["Harbor Week"]},
+  {"question": "Who are the founders of the company?", "source": "onboarding.md", "answer_contains": ["Moreira", "Lund"]},
+  {"question": "What should I do if I lose my security key?", "source": "security.md", "answer_contains": ["security-incidents"]},
+  {"question": "What is the company's parental leave policy?", "source": null, "answer_contains": ["don't know", "do not know", "not mentioned", "doesn't", "does not", "no information", "not covered"]}
+]
