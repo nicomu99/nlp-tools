@@ -1,0 +1,6 @@
+[
+  {"name": "Priya Raman", "team": "Platform", "team_lead": "Jonas Berg", "vacation_days_left": 12, "on_call_next": "2026-11-10"},
+  {"name": "Tomás Silva", "team": "Design", "team_lead": "Ana Costa", "vacation_days_left": 3, "on_call_next": null},
+  {"name": "Mei Tanaka", "team": "Data", "team_lead": "Jonas Berg", "vacation_days_left": 20, "on_call_next": "2026-10-20"},
+  {"name": "Lars Eriksen", "team": "Platform", "team_lead": "Jonas Berg", "vacation_days_left": 0, "on_call_next": "2026-12-01"}
+]
