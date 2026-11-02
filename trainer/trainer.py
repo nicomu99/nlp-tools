@@ -72,7 +72,7 @@ class Trainer:
         elif task == "arlm":
             self.task = ARLMTask(self.criterion)  # TODO: Fix typing in task
         else:
-            raise ValuError(f"Unknown task identifier {task}. Must be \"classification\" or \"arlm\".")
+            raise ValueError(f"Unknown task identifier {task}. Must be \"classification\" or \"arlm\".")
 
         self.early_stop = early_stop
         self.early_stop_limit = early_stop_limit
